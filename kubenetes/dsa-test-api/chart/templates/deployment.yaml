@@ -7,7 +7,7 @@ spec:
   selector:
     matchLabels:
       app: dsa-test-api
-  replicas: 1
+  replicas: {{ .Values.api.replicas }} 
   template:
     metadata:
       labels:
