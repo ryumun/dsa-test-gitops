@@ -1,0 +1,40 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: dsa-test-api-gateway
+  namespace: prd-api 
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http-dsa-test-api
+      protocol: HTTP
+    hosts:
+    - "www.mzcdsa.shop"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: dsa-test-api-vs
+  namespace: prd-api
+spec:
+  hosts:
+  - "www.mzcdsa.shop"
+  gateways:
+  - dsa-test-api-gateway
+  http:
+  - route:
+    - destination:
+        host: dsa-test-api
+        port:
+          number: 80 
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: dsa-test-api
+  namespace: prd-api
+spec:
+  host: dsa-test-api 

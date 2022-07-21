@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dsa-test-api
+  namespace: prd-api
+spec:
+  selector:
+    matchLabels:
+      app: dsa-test-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dsa-test-api
+    spec:
+      containers:
+      - image: 278330437803.dkr.ecr.ap-northeast-2.amazonaws.com/dsa-test-api:ver8
+        imagePullPolicy: Always
+        name: dsa-test-api       
+        ports:
+        - containerPort: 9000
