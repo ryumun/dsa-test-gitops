@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dsa-test-api
+  namespace: prd-api
+spec:
+  ports:
+    - port: 80
+      name: http
+      protocol: TCP
+      targetPort: 9000
+  selector:
+    app: dsa-test-api

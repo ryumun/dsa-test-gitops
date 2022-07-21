@@ -1,0 +1,17 @@
+pipeline {
+    agent any
+    stages {
+        stage('Selenium Test') {
+            steps {
+                script {
+                    withEnv(["PATH=$PATH:/home/jenkins/.nvm/versions/node/v16.15.0/bin"]) {
+                        sh """
+                            selenium-side-runner --server http://127.0.0.1:4444/wd/hub -c "browserName=chrome goog:chromeOptions.args=[disable-infobars, headless]" /home/jenkins/selenium/Megahub.side
+                            selenium-side-runner --server http://127.0.0.1:4444/wd/hub -c "browserName=MicrosoftEdge ms:edgeOptions.args=[disable-infobars, headless]" /home/jenkins/selenium/Megahub.side
+                        """
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+    stages {
+        stage('Git Clone') {
+            steps {
+                script {
+                    try {
+                        git url: "https://$GIT_REPOSITORY", branch: "master", credentialsId: "$GIT_CREDENTIALS_ID"
+                        sh "sudo rm -rf ./.git"
+                        env.cloneResult=true
+                    } catch (error) {
+                        print(error)
+                        env.cloneResult=false
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+        }
+        stage('Selenium Test') {
+            when {
+                expression {
+                    return env.cloneResult ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/
+                }                
+            }
+            steps {
+                script{
+                    try {
+                        withEnv(["PATH=$PATH:/home/jenkins/maven/apache-maven-3.8.6/bin"]) {
+                            sh 'mvn clean compile test'
+                        }
+                        env.mavenBuildResult=true
+                    } catch (error) {
+                        print(error)
+                        echo 'Remove Deploy Files'
+                        sh "sudo rm -rf /var/lib/jenkins/workspace/${env.JOB_NAME}/*"
+                        env.mavenBuildResult=false
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+        }
+        stage('Publish Test Results') {
+            steps {
+                junit '**/surefire-reports/*.xml'
+            }
+        } 
+    }
+}
