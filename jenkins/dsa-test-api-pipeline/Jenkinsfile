@@ -5,7 +5,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        git url: "https://$GIT_REPOSITORY", branch: "master", credentialsId: "$GIT_CREDENTIALS_ID"
+                        git url: "https://$GIT_REPOSITORY/dsa-test-api", branch: "master", credentialsId: "$GIT_CREDENTIALS_ID"
                         sh "sudo rm -rf ./.git"
                         env.cloneResult=true
                     } catch (error) {
@@ -82,6 +82,106 @@ EOF"""
                         echo 'Remove Deploy Files'
                         sh "sudo rm -rf /var/lib/jenkins/workspace/${env.JOB_NAME}/*"
                         env.dockerBuildResult=false
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+        }
+        stage('Push Yaml'){
+            when {
+                expression {
+                    return env.dockerBuildResult ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/
+                }
+            }
+            steps {
+                script{
+                    try {
+                        git url: "https://$GIT_REPOSITORY/dsa-test-gitops", branch: "master", credentialsId: "$GIT_CREDENTIALS_ID"
+                        sh """
+                        cd kubernetes/dsa-test-api/chart/templates
+                        #!/bin/bash
+                        cat>deployment.yaml<<-EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dsa-test-api
+  namespace: prd-api
+spec:
+  selector:
+    matchLabels:
+      app: dsa-test-api
+  replicas: {{ .Values.api.replicas }} 
+  template:
+    metadata:
+      labels:
+        app: dsa-test-api
+    spec:
+      containers:
+      - image: ${ECR_TASK_URL}:ver${env.BUILD_NUMBER}
+        imagePullPolicy: Always
+        name: dsa-test-api       
+        ports:
+        - containerPort: 9000
+EOF"""
+                        sh "cat /var/lib/jenkins/workspace/${env.JOB_NAME}/kubernetes/dsa-test-api/chart/templates/deployment.yaml"
+                        withCredentials([[$class: "UsernamePasswordMultiBinding", credentialsId: "$GIT_CREDENTIALS_ID", usernameVariable: "GIT_AUTHOR_NAME", passwordVariable: "GIT_PASSWORD"]]) {
+                            sh """
+                            git add .
+                            git commit -m "Deploy ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+                            git push https://${GIT_AUTHOR_NAME}:${GIT_PASSWORD}@${GIT_REPOSITORY}/dsa-test-gitops
+                            """
+                        }                      
+                        sh "sudo rm -rf /var/lib/jenkins/workspace/${env.JOB_NAME}/*"
+                        env.pushYamlResult=true
+                    } catch (error) {
+                        print(error)
+                        echo 'Remove Deploy Files'
+                        withCredentials([[$class: "UsernamePasswordMultiBinding", credentialsId: "$GIT_CREDENTIALS_ID", usernameVariable: "GIT_AUTHOR_NAME", passwordVariable: "GIT_PASSWORD"]]) {
+                            sh """
+                            git reset --hard HEAD^
+                            git push --force https://${GIT_AUTHOR_NAME}:${GIT_PASSWORD}@${GIT_REPOSITORY}/dsa-test-gitops
+                            """
+                        }
+                        sh "sudo rm -rf /var/lib/jenkins/workspace/${env.JOB_NAME}/*"
+                        env.pushYamlResult=false
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+        }
+        stage('Argo Deploy'){
+            when {
+                expression {
+                    return env.pushYamlResult ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/
+                }
+            }
+            steps {
+                script{
+                    try {
+                        withEnv(["PATH=/home/jenkins/bin:$PATH"]) {
+                            sh"""
+#!/bin/bash
+expect << EOF
+spawn argocd login --grpc-web $ARGOCD_DOMAIN
+
+
+expect "Username:"
+send "admin\r";    
+
+
+expect "Password:"
+send "$ARGOCD_PW\r";    
+                                
+expect eof
+EOF
+                                argocd app get $ARGOCD_APP_NAME
+                                argocd app sync $ARGOCD_APP_NAME
+                            """
+                        }
+                    } catch (error) {
+                        print(error)
+                        echo 'Remove Deploy Files'
+                        sh "sudo rm -rf /var/lib/jenkins/workspace/${env.JOB_NAME}/*"
                         currentBuild.result = 'FAILURE'
                     }
                 }
