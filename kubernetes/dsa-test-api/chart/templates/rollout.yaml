@@ -1,5 +1,5 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: dsa-test-api
   namespace: prd-api
@@ -19,3 +19,10 @@ spec:
         name: dsa-test-api       
         ports:
         - containerPort: 9000
+  strategy:
+    blueGreen:
+      previewService: dsa-test-api-prv
+      activeService: dsa-test-api
+      autoPromotionEnabled: true
+      previewReplicaCount: 1
+      scaleDownDelaySeconds: 60
