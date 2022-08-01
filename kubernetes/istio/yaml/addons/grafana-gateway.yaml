@@ -12,7 +12,7 @@ spec:
       name: http-grafana
       protocol: HTTP
     hosts:
-    - "grafana.mzcdsa.shop"
+    - "grafana-istio.mzcdsa.shop"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -21,7 +21,7 @@ metadata:
   namespace: istio-system
 spec:
   hosts:
-  - "grafana.mzcdsa.shop"
+  - "grafana-istio.mzcdsa.shop"
   gateways:
   - grafana-gateway
   http:

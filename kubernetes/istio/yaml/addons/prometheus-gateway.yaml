@@ -12,7 +12,7 @@ spec:
       name: http-prom
       protocol: HTTP
     hosts:
-    - "prometheus.mzcdsa.shop"
+    - "prometheus-istio.mzcdsa.shop"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -21,7 +21,7 @@ metadata:
   namespace: istio-system
 spec:
   hosts:
-  - "prometheus.mzcdsa.shop"
+  - "prometheus-istio.mzcdsa.shop"
   gateways:
   - prometheus-gateway
   http:
