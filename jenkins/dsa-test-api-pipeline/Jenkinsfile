@@ -19,7 +19,7 @@ pipeline {
         stage('Sonarqube Analysis') {
             when {
                 expression {
-                    return env.gitcloneResult ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/
+                    return env.cloneResult ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/
                 }
             }
             steps {
