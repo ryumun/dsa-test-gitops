@@ -14,7 +14,7 @@ spec:
         app: dsa-test-api
     spec:
       containers:
-      - image: 278330437803.dkr.ecr.ap-northeast-2.amazonaws.com/dsa-test-api:ver39
+      - image: 278330437803.dkr.ecr.ap-northeast-2.amazonaws.com/dsa-test-api:ver40
         imagePullPolicy: Always
         name: dsa-test-api       
         ports:
